@@ -1,0 +1,36 @@
+{
+  "seed": 42,
+  "num_samples": 50000,
+  "test_size": 0.2,
+  "features": {
+    "categorical": [
+      "user_segment",
+      "device",
+      "hour_bucket",
+      "ad_category",
+      "creative_type"
+    ],
+    "numerical": [
+      "user_activity",
+      "ad_quality",
+      "bid"
+    ]
+  },
+  "training": {
+    "batch_size": 512,
+    "epochs": 6,
+    "learning_rate": 0.001,
+    "embedding_dim": 8,
+    "hidden_dims": [64, 32]
+  },
+  "models": [
+    "logistic_regression",
+    "factorization_machine",
+    "wide_deep",
+    "deepfm"
+  ],
+  "ranking": {
+    "group_size": 10,
+    "ndcg_k": 5
+  }
+}
