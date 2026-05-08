@@ -1,43 +1,60 @@
 # Ads Ranking Pipeline for CTR/CVR Prediction
 
-End-to-end advertising ranking project designed for machine learning internship interviews.
+Production-inspired ads ranking ML project covering CTR/CVR prediction, feature interaction
+models, probability calibration, auction-aware ranking, Spark-based offline feature engineering, and
+inference benchmarking.
 
-The project is organized around two tracks:
-
-1. **Synthetic full-funnel ads simulation**: a controlled environment with CTR, CVR, bid, and
-   auction-aware ranking.
-2. **Real-world ads benchmark**: planned extension for public advertising datasets such as Ali-CCP,
-   Avazu, iPinYou, or Criteo.
-3. **Big-data feature engineering**: local PySpark, SQL examples, and partitioned Parquet outputs
-   that mirror production ads ML preprocessing workflows.
-
-The current implementation focuses on the synthetic full-funnel track:
-
-1. Generate ad impression data with user, ad, context, bid, click, and conversion signals.
-2. Train separate CTR and conditional CVR prediction models.
-3. Compare Logistic Regression, Factorization Machine, Wide & Deep, and DeepFM.
-4. Rank candidate ads with an eCPM-style expected value score.
-5. Evaluate both model quality and ranking quality.
-
-This mirrors the core workflow used in ads recommendation systems: recall, rough ranking,
-fine ranking, and auction-aware final ranking.
-
-## Why This Project Matters
-
-Ads ranking is not just binary classification. A practical ads system needs to estimate:
-
-- `pCTR`: probability that a user clicks an ad.
-- `pCVR`: probability that a clicked user converts.
-- `bid`: advertiser willingness to pay.
-- final ranking score, commonly related to expected value.
-
-This project uses:
+The core problem:
 
 ```text
-expected_value = pCTR * pCVR * bid
+Given a user request and candidate ads, predict pCTR and pCVR, then rank ads by expected value.
 ```
 
-as a simple auction-aware ranking score.
+The synthetic full-funnel track uses:
+
+```text
+expected_value_score = pCTR * pCVR * bid
+```
+
+The real-world track is designed for public ads samples such as Ali-CCP, where full auction fields
+are not always available.
+
+## Architecture
+
+```mermaid
+flowchart LR
+  Raw[Raw ads events] --> Spark[PySpark / SQL feature engineering]
+  Spark --> Parquet[Partitioned Parquet]
+  Parquet --> Sample[Training sample]
+  Sample --> Features[Feature encoding + priors]
+  Features --> Models[LR / FM / Wide & Deep / DeepFM]
+  Models --> Prob[pCTR + pCVR]
+  Prob --> Rank[Auction-aware ranking]
+  Rank --> Eval[Prediction + calibration + ranking metrics]
+  Models --> Bench[Inference latency benchmark]
+```
+
+## Tracks
+
+| Track | Purpose | Status |
+| --- | --- | --- |
+| Synthetic full-funnel simulation | Validate CTR/CVR/bid/ranking/calibration logic in a controlled ads environment. | Implemented |
+| Real-world ads benchmark | Run CTR/CVR model experiments on preprocessed public ads samples such as Ali-CCP. | Loader ready, sample pending |
+| Big-data feature engineering | Mirror production offline feature workflows with PySpark, SQL, and partitioned Parquet. | Implemented |
+| Serving benchmark | Compare model complexity and inference latency. | Implemented |
+
+## Implemented Capabilities
+
+- CTR and conditional CVR modeling.
+- Logistic Regression, Factorization Machine, Wide & Deep, and DeepFM baselines.
+- Historical CTR/CVR prior features with train-fitted leakage control.
+- Feature ablation for base vs engineered features.
+- Probability calibration metrics: Brier Score and Expected Calibration Error.
+- Auction-aware synthetic ranking with `pCTR * pCVR * bid`.
+- Ranking metrics: NDCG@K and top-1 conversion rate.
+- Local PySpark feature engineering and partitioned Parquet output.
+- SQL feature examples for Hive/Presto/Trino/BigQuery/Snowflake-style workflows.
+- Inference benchmark with parameter count, average latency, p95 latency, and throughput.
 
 ## Project Structure
 
@@ -45,6 +62,14 @@ as a simple auction-aware ranking score.
 ads-ranking-pipeline/
   configs/
     default.json
+    aliccp_sample.json
+    benchmark.json
+    spark_features.json
+  docs/
+    big_data_workflow.md
+    decision_log.md
+    project_explanation.md
+    sql_feature_examples.sql
   scripts/
     run_demo.py
     run_experiments.py
@@ -52,24 +77,17 @@ ads-ranking-pipeline/
     run_aliccp_sample.py
     spark_build_features.py
     benchmark_inference.py
-  src/
-    ads_ranking/
-      bigdata/
-        spark_features.py
-        spark_session.py
-      data.py
-      datasets/
-        aliccp.py
-        synthetic.py
-        real_world.py
-      experiments.py
-      evaluation.py
-      features.py
-      train.py
-      models/
-        tabular.py
-      ranking/
-        auction.py
+  src/ads_ranking/
+    bigdata/
+    datasets/
+    models/
+    ranking/
+    calibration.py
+    data.py
+    evaluation.py
+    experiments.py
+    features.py
+    train.py
 ```
 
 ## Quick Start
@@ -81,58 +99,43 @@ pip install -r requirements.txt
 python scripts/run_demo.py
 ```
 
-For editable package usage:
+## Main Commands
 
-```bash
-pip install -e .
-```
-
-Run the full model comparison:
+Run synthetic model comparison:
 
 ```bash
 python scripts/run_experiments.py
 ```
 
-Run the feature engineering ablation:
+Run feature ablation:
 
 ```bash
 python scripts/run_feature_ablation.py
 ```
 
-Build Spark-based offline features and partitioned Parquet outputs:
+Build local Spark features and partitioned Parquet outputs:
 
 ```bash
-python scripts/spark_build_features.py
+JAVA_HOME=$(/usr/libexec/java_home -v 17) python scripts/spark_build_features.py
 ```
 
-Run an inference latency benchmark:
+Run inference benchmark:
 
 ```bash
 python scripts/benchmark_inference.py
 ```
 
-The demo trains separate CTR and CVR models on synthetic ads data and prints:
+Run Ali-CCP sample experiment after creating `data/aliccp/sample.csv`:
 
-- CTR AUC / LogLoss
-- CVR AUC / LogLoss
-- Brier Score / Expected Calibration Error
-- NDCG@K for ranked ad lists
-- Average expected value of selected top ads
-
-## Resume Bullet Draft
-
-```text
-Built an end-to-end ads ranking pipeline for CTR/CVR prediction using PyTorch,
-including synthetic impression generation, categorical feature embeddings,
-FM/DeepFM feature interaction modeling, auction-aware ranking, and ranking quality evaluation.
-
-Compared Logistic Regression, Factorization Machine, Wide & Deep, and DeepFM models,
-then optimized final ad ordering with expected value score pCTR * pCVR * bid.
+```bash
+python scripts/run_aliccp_sample.py
 ```
 
-## Current Experiment Result
+Generated data and experiment outputs are written to `data/` and `outputs/`, both ignored by Git.
 
-One local experiment run produced:
+## Current Results
+
+Synthetic model comparison:
 
 ```text
 model                  ctr_auc  ctr_logloss  ctr_brier  ctr_ece  cvr_auc  cvr_logloss  cvr_brier  cvr_ece  ndcg@5  top1_conversion_rate
@@ -142,18 +145,7 @@ wide_deep               0.7450       0.5075     0.1682   0.0156   0.6684       0
 deepfm                  0.7362       0.5154     0.1713   0.0260   0.6402       0.5656     0.1895   0.0296  0.8665                0.1322
 ```
 
-## Feature Engineering Ablation
-
-The engineered feature set adds smoothed historical prior features fitted only on the train split:
-
-- category CTR/CVR prior
-- creative CTR/CVR prior
-- hour CTR prior
-- user segment CTR prior
-- user segment x ad category CTR/CVR prior
-- user-ad CTR/CVR lift over category baseline
-
-One local ablation run produced:
+Feature ablation:
 
 ```text
 feature_set   model      ctr_auc  ctr_logloss  ctr_brier  ctr_ece  cvr_auc  cvr_logloss  cvr_brier  cvr_ece  ndcg@5  top1_conversion_rate
@@ -163,70 +155,63 @@ engineered    wide_deep   0.7465       0.5073     0.1681   0.0194   0.6768      
 engineered    deepfm      0.7399       0.5128     0.1705   0.0224   0.6598       0.5588     0.1867   0.0308  0.8756                0.1356
 ```
 
-The gains are stronger on CVR and ranking metrics than raw CTR, which is expected because historical
-priors and user-ad affinity features are closer to conversion intent than immediate click appeal.
-Calibration metrics do not always improve together with AUC, which motivates a separate calibration
-correction step before using predicted probabilities in auction scoring.
+Inference benchmark:
 
-## Real-World Benchmark Track
+```text
+model                  parameters  batch_size  avg_latency_ms  p95_latency_ms  ads_per_second
+logistic_regression            37        1024          0.2801          0.7429    3656417.5361
+factorization_machine         325        1024          2.4825         11.7489     412486.2711
+wide_deep                    5377        1024          2.1721          7.0151     471440.1051
+deepfm                       5702        1024          3.4083          7.3849     300440.0964
+```
 
-The real-world benchmark track is intentionally separate from the synthetic track. Public ads
-datasets often provide real click labels but do not include the full funnel needed for auction-aware
-ranking, such as CVR labels, bid, campaign budget, or serving constraints.
+## Real-World Data
 
-The planned benchmark will use a dataset-specific loader under `src/ads_ranking/datasets/` and reuse
-the same model, feature, and calibration evaluation code where possible.
-
-### Ali-CCP Sample Format
-
-The first real-world loader targets a preprocessed Ali-CCP sample stored as CSV or Parquet:
+The Ali-CCP loader expects a preprocessed CSV or Parquet sample:
 
 ```text
 data/aliccp/sample.csv
 ```
 
-Required label columns:
+Required labels:
 
 ```text
 click
 conversion
 ```
 
-All other object/string columns are treated as categorical features. Numeric non-label columns are
-treated as numerical features. The real-world script focuses on CTR/CVR prediction metrics only,
-because a tabular Ali-CCP sample does not include bid or request-level candidate sets for auction
-ranking.
+String/object columns are treated as categorical features, and numeric non-label columns are treated
+as numerical features.
 
-Run it with:
+Large raw datasets should be processed remotely or in a data platform, then sampled locally. See
+`docs/big_data_workflow.md`.
 
-```bash
-python scripts/run_aliccp_sample.py
-```
+## Documentation
 
-See `docs/project_explanation.md` for the interview explanation.
+- `docs/project_explanation.md`: detailed explanation for interviews.
+- `docs/decision_log.md`: project evolution and design decisions.
+- `docs/big_data_workflow.md`: local-to-cloud big-data workflow.
+- `docs/runbook.md`: operational commands for local runs.
+- `docs/sql_feature_examples.sql`: SQL equivalents for offline feature engineering.
 
-## Big-Data Workflow
-
-The project includes a local PySpark workflow that mirrors production data preprocessing:
+## Resume Bullets
 
 ```text
-raw ads events
-  -> Spark historical CTR/CVR prior aggregation
-  -> partitioned Parquet
-  -> sampled CSV for local model training
+Built a production-inspired ads ranking pipeline with CTR/CVR prediction, FM/DeepFM/Wide & Deep
+baselines, historical prior features, probability calibration metrics, and auction-aware ranking.
+
+Implemented Spark-based offline feature engineering with partitioned Parquet outputs and SQL
+feature examples, mirroring production ads ML data workflows.
+
+Benchmarked model serving tradeoffs with parameter count, average latency, p95 latency, and
+throughput for multiple ranking model architectures.
 ```
 
-See:
+## Limitations
 
-- `docs/big_data_workflow.md`
-- `docs/sql_feature_examples.sql`
-- `docs/decision_log.md`
-
-Experiment and benchmark outputs are written under `outputs/`, which is intentionally ignored by
-Git.
-
-For local Spark runs on this machine, use Java 17:
-
-```bash
-JAVA_HOME=$(/usr/libexec/java_home -v 17) python scripts/spark_build_features.py
-```
+- Full-funnel auction metrics are reported on synthetic data because public datasets usually lack
+  bid, budget, and request-level candidate sets.
+- Real-world Ali-CCP support currently expects a preprocessed sample rather than raw full-dataset
+  ingestion.
+- Calibration correction is not implemented yet; the project currently evaluates calibration with
+  Brier Score and ECE.
