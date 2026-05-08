@@ -1,0 +1,9 @@
+{
+  "seed": 42,
+  "num_samples": 50000,
+  "smoothing": 20.0,
+  "raw_output": "data/synthetic/raw_ads_events",
+  "processed_output": "data/synthetic/processed_ads_events",
+  "sample_csv_output": "data/synthetic/processed_sample.csv"
+}
+

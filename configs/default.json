@@ -16,6 +16,26 @@
       "bid"
     ]
   },
+  "engineered_features": [
+    "category_ctr_prior",
+    "creative_ctr_prior",
+    "hour_ctr_prior",
+    "user_segment_ctr_prior",
+    "user_ad_ctr_prior",
+    "user_ad_ctr_lift",
+    "category_cvr_prior",
+    "creative_cvr_prior",
+    "user_ad_cvr_prior",
+    "user_ad_cvr_lift"
+  ],
+  "feature_sets": {
+    "base": {
+      "use_engineered_features": false
+    },
+    "engineered": {
+      "use_engineered_features": true
+    }
+  },
   "training": {
     "batch_size": 512,
     "epochs": 6,
@@ -32,5 +52,11 @@
   "ranking": {
     "group_size": 10,
     "ndcg_k": 5
+  },
+  "ablation": {
+    "models": [
+      "wide_deep",
+      "deepfm"
+    ]
   }
 }

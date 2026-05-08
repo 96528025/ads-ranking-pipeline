@@ -1,0 +1,26 @@
+{
+  "seed": 42,
+  "dataset": {
+    "name": "aliccp",
+    "path": "data/aliccp/sample.csv",
+    "num_rows": 100000
+  },
+  "test_size": 0.2,
+  "training": {
+    "batch_size": 512,
+    "epochs": 5,
+    "learning_rate": 0.001,
+    "embedding_dim": 8,
+    "hidden_dims": [64, 32]
+  },
+  "models": [
+    "logistic_regression",
+    "factorization_machine",
+    "wide_deep",
+    "deepfm"
+  ],
+  "ranking": {
+    "ndcg_k": 5
+  }
+}
+

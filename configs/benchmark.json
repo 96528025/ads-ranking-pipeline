@@ -1,0 +1,18 @@
+{
+  "seed": 42,
+  "num_samples": 50000,
+  "batch_size": 1024,
+  "warmup_batches": 5,
+  "benchmark_batches": 30,
+  "models": [
+    "logistic_regression",
+    "factorization_machine",
+    "wide_deep",
+    "deepfm"
+  ],
+  "training": {
+    "embedding_dim": 8,
+    "hidden_dims": [64, 32]
+  }
+}
+

@@ -2,12 +2,14 @@ from __future__ import annotations
 
 import json
 import sys
+from datetime import datetime
 from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(PROJECT_ROOT / "src"))
 
-from ads_ranking.data import FeatureSpec, encode_and_split, generate_synthetic_ads_data
+from ads_ranking.data import FeatureSpec, encode_and_split
+from ads_ranking.datasets.synthetic import generate_synthetic_ads_data
 from ads_ranking.experiments import run_experiment_suite
 
 
@@ -43,6 +45,16 @@ def main() -> None:
     )
     print("\nExperiment comparison")
     print(results.round(4).to_string(index=False))
+
+    output_dir = PROJECT_ROOT / "outputs" / "experiments"
+    output_dir.mkdir(parents=True, exist_ok=True)
+    output_path = output_dir / f"synthetic_model_comparison_{timestamp()}.csv"
+    results.to_csv(output_path, index=False)
+    print(f"\nSaved results to {output_path}")
+
+
+def timestamp() -> str:
+    return datetime.now().strftime("%Y%m%d_%H%M%S")
 
 
 if __name__ == "__main__":

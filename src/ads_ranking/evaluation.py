@@ -4,12 +4,20 @@ import numpy as np
 import pandas as pd
 from sklearn.metrics import log_loss, roc_auc_score
 
+from ads_ranking.calibration import brier_score, expected_calibration_error
 
-def binary_metrics(labels: np.ndarray, probabilities: np.ndarray) -> dict[str, float]:
+
+def binary_metrics(
+    labels: np.ndarray,
+    probabilities: np.ndarray,
+    calibration_bins: int = 10,
+) -> dict[str, float]:
     clipped = np.clip(probabilities, 1e-6, 1.0 - 1e-6)
     return {
         "auc": float(roc_auc_score(labels, clipped)),
         "logloss": float(log_loss(labels, clipped)),
+        "brier": brier_score(labels, clipped),
+        "ece": expected_calibration_error(labels, clipped, num_bins=calibration_bins),
     }
 
 
@@ -38,4 +46,3 @@ def topk_average(frame: pd.DataFrame, group_col: str, score_col: str, value_col:
         .head(k)
     )
     return float(selected[value_col].mean())
-

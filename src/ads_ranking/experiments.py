@@ -138,8 +138,12 @@ def run_model_experiment(
         "model": model_name,
         "ctr_auc": ctr_metrics["auc"],
         "ctr_logloss": ctr_metrics["logloss"],
+        "ctr_brier": ctr_metrics["brier"],
+        "ctr_ece": ctr_metrics["ece"],
         "cvr_auc": cvr_metrics["auc"],
         "cvr_logloss": cvr_metrics["logloss"],
+        "cvr_brier": cvr_metrics["brier"],
+        "cvr_ece": cvr_metrics["ece"],
         f"ndcg@{ranking_config['ndcg_k']}": ndcg,
         "top1_conversion_rate": top1_conversion,
     }
@@ -168,4 +172,3 @@ def run_experiment_suite(
         )
 
     return pd.DataFrame(results)
-
